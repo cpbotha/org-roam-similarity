@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "org-roam-umap"
+version = "0.1.0"
+description = ""
+authors = ["Charl P. Botha <cpbotha@vxlabs.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+# <3.13 to get numpy installed :(
+python = ">=3.10,<3.13"
+transformers = "^4.34.1"
+torch = "^2.1.0"
+pandas = "^2.1.2"
+pyarrow = "^13.0.0"
+umap-learn = "^0.5.4"
+seaborn = "^0.13.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.26.0"
+nbdime = "^3.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
