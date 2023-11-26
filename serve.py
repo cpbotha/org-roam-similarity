@@ -4,6 +4,7 @@ from typing import Dict, List
 from fastapi import FastAPI, Response
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel
 import uvicorn
 
 from transformers import AutoModel
@@ -28,15 +29,18 @@ embs_df_n = pd.read_parquet("/tmp/bleh2/bleh2.norm_embs.parq")
 
 app = FastAPI()
 
+class TextObject(BaseModel):
+    text: str
 
-@app.get("/similar/")
-def get_similar_nodes(text: str) -> List:
+@app.post("/similar/")
+def get_similar_nodes(text_object: TextObject) -> List:
     # emb is a numby array. 512 elements in the case of jina v2 small en
-    emb = model.encode(text)
+    emb = model.encode(text_object.text)
     emb_n = emb / np.linalg.norm(emb)
     # series with index the ID and value the similarity
     top_n = embs_df_n.dot(emb_n).sort_values(ascending=False).head(10)
     #logging.warning(text)
+    logging.info(top_n.values)
     return zip(top_n.index.to_list(), top_n.values.tolist())
 
 
