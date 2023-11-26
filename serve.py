@@ -8,14 +8,19 @@ import uvicorn
 
 from transformers import AutoModel
 
-device = "cuda:0"
-# vs base
-model_name = "jinaai/jina-embeddings-v2-small-en"
-model = AutoModel.from_pretrained(
-    model_name, trust_remote_code=True
-)  # trust_remote_code is needed to use the encode method
-model.to(device)
 
+logging.basicConfig(level=logging.INFO)
+
+model_name = "jinaai/jina-embeddings-v2-small-en"
+# device_map="auto" will use hardware (cuda, hopefully mps on mac) if available
+model = AutoModel.from_pretrained(
+    model_name, trust_remote_code=True, device_map="auto"
+)  # trust_remote_code is needed to use the encode method
+
+if model.device.type == "cpu":
+    logging.warning("model is on CPU, this will be slow")
+else:
+    logging.info(f"✅ model is on device {model.device}")
 
 embs_df_n = pd.read_parquet("/tmp/bleh2/bleh2.norm_embs.parq")
 # once-off normalize the embeddings if they are not pre-normalized

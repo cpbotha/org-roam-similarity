@@ -21,14 +21,16 @@ from transformers import AutoModel
 @click.argument("glob")
 def cli(proj: str, path: Path, glob: str):
 
-    # TODO: only do if CUDA available, big warning if not
-    device = "cuda:0"
-    # vs base
     model_name = "jinaai/jina-embeddings-v2-small-en"
     model = AutoModel.from_pretrained(
-        model_name, trust_remote_code=True
+        model_name, trust_remote_code=True, device_map="auto"
     )  # trust_remote_code is needed to use the encode method
-    model.to(device)
+
+    if model.device.type == "cpu":
+        click.echo("⚠️ model is on CPU, this will be slow")
+    else:
+        click.echo(f"✅ model is on device {model.device}")
+
 
     target_dir = Path(path)
 

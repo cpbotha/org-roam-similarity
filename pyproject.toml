@@ -22,6 +22,7 @@ ipywidgets = "^8.1.1"
 fastapi = "^0.104.1"
 uvicorn = "^0.24.0.post1"
 click = "^8.1.7"
+accelerate = "^0.24.1"
 
 
 [tool.poetry.group.dev.dependencies]
