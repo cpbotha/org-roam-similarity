@@ -16,13 +16,6 @@ transformers = "^4.34.1"
 torch = "^2.1.0"
 pandas = "^2.1.2"
 pyarrow = "^13.0.0"
-umap-learn = "^0.5.4"
-seaborn = "^0.13.0"
-bokeh = "^3.3.0"
-holoviews = "^1.18.0"
-datashader = "^0.16.0"
-jupyterlab = "^4.0.7"
-ipywidgets = "^8.1.1"
 fastapi = "^0.104.1"
 uvicorn = "^0.24.0.post1"
 click = "^8.1.7"
@@ -32,6 +25,21 @@ accelerate = "^0.24.1"
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.26.0"
 nbdime = "^3.2.1"
+
+# only need jupyter if you want to experiment with jupyter notebooks
+# and specifically umap
+# poetry install --with jupyter
+[tool.poetry.group.jupyter]
+optional = true
+
+[tool.poetry.group.jupyter.dependencies]
+umap-learn = "^0.5.4"
+seaborn = "^0.13.0"
+bokeh = "^3.3.0"
+holoviews = "^1.18.0"
+datashader = "^0.16.0"
+jupyterlab = "^4.0.7"
+ipywidgets = "^8.1.1"
 
 [tool.poetry.scripts]
 serve = "org_roam_similarity.serve:run"
