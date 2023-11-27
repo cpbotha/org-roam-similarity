@@ -15,6 +15,14 @@ This open source setup currently works as follows:
 - run serve.py which waits for submission of any text to return the N closest node ids, according to the Jina AI learned embeddings. These are really quite good and fully local, but it would be straight-forward to use a service like OpenAI embeddings for everything
 - There is more emacs lisp that customizes the org-roam buffer setup to call to serve.py's endpoint and renders the list of similar nodes
 
+## Status of this repo
+
+75% ready for reproduction. Remaining tasks as on 2023-11-27 are below:
+
+- [ ] convert my current emacs lisp for run-time similarity retrieval from server to package (not even my klunky version is on github yet)
+- [ ] clean up code for creation of global embeddings
+- [ ] Write quickstart (when you see this appear below, it means this repo is ready for you to try)
+
 ## Quickstart
 
 TBD
