@@ -1,9 +1,13 @@
 [tool.poetry]
-name = "org-roam-umap"
+name = "org-roam-similarity"
 version = "0.1.0"
 description = ""
 authors = ["Charl P. Botha <cpbotha@vxlabs.com>"]
 readme = "README.md"
+# need the following because name and package differ wrt - and _
+# https://python-poetry.org/docs/basic-usage/#project-setup
+packages = [{include = "org_roam_similarity"}]
+
 
 [tool.poetry.dependencies]
 # <3.13 to get numpy installed :(
@@ -28,6 +32,11 @@ accelerate = "^0.24.1"
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.26.0"
 nbdime = "^3.2.1"
+
+[tool.poetry.scripts]
+serve = "org_roam_similarity.serve:run"
+embed = "org_roam_similarity.embed:cli"
+
 
 [build-system]
 requires = ["poetry-core"]
