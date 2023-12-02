@@ -1,31 +1,41 @@
 import logging
+import time
 from typing import Dict, List
 
+
+import click
 from fastapi import FastAPI, Response
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 import uvicorn
 
-from transformers import AutoModel
+from . import utils
 
 
 logging.basicConfig(level=logging.INFO)
 
-model_name = "jinaai/jina-embeddings-v2-small-en"
-# device_map="auto" will use hardware (cuda, hopefully mps on mac) if available
-model = AutoModel.from_pretrained(
-    model_name, trust_remote_code=True, device_map="auto"
-)  # trust_remote_code is needed to use the encode method
+MAX_LENGTH = None
+EMBS_DF_N = None
+MODEL = None
 
-if model.device.type == "cpu":
-    logging.warning("model is on CPU, this will be slow")
-else:
-    logging.info(f"✅ model is on device {model.device}")
+def load_model():
+    model = utils.get_model()
 
-embs_df_n = pd.read_parquet("/tmp/bleh2/bleh2.norm_embs.parq")
-# once-off normalize the embeddings if they are not pre-normalized
-#embs_df_n = embs_df.div(np.linalg.norm(embs_df, axis=1), axis=0)
+    if model.device.type == "cpu":
+        logging.warning("⚠️ model is on CPU, this will be slow")
+    else:
+        logging.info(f"✅ model is on device {model.device}")
+
+    return model
+
+
+def load_embs(fn):
+    embs_df_n = pd.read_parquet(fn)
+    # once-off normalize the embeddings if they are not pre-normalized
+    #embs_df_n = embs_df.div(np.linalg.norm(embs_df, axis=1), axis=0)
+    # strip out the sha1 column, we only want hthe embeddings
+    return embs_df_n.drop("sha1", axis=1)
 
 app = FastAPI()
 
@@ -34,24 +44,33 @@ class TextObject(BaseModel):
 
 @app.post("/similar/")
 def get_similar_nodes(text_object: TextObject) -> List:
+    # time the embedding in microseconds
+    start_ns = time.perf_counter_ns() 
     # emb is a numby array. 512 elements in the case of jina v2 small en
-    emb = model.encode(text_object.text)
+    emb = MODEL.encode(text_object.text, max_length=MAX_LENGTH)
     emb_n = emb / np.linalg.norm(emb)
     # series with index the ID and value the similarity
-    top_n = embs_df_n.dot(emb_n).sort_values(ascending=False).head(10)
+    top_n = EMBS_DF_N.dot(emb_n).sort_values(ascending=False).head(10)
+    end_ns = time.perf_counter_ns()
+    logging.info(f"Embedding {len(text_object.text)}, brute force similarity and sorting took {(end_ns - start_ns) / 1000_000} ms")
     #logging.warning(text)
     logging.info(top_n.values)
     return zip(top_n.index.to_list(), top_n.values.tolist())
 
-
-def run():
+@click.command()
+@click.argument("embeddings_fn")
+@click.option("--max_length", type=int, default=None, required=False, 
+              help="Optionally decrease context length to speed up embedding, at the cost of document truncation.")
+@click.option("--reload", is_flag=True)
+def run(embeddings_fn, max_length, reload):
     """Run orserve for production."""
-    uvicorn.run(app)
+    global EMBS_DF_N, MAX_LENGTH, MODEL
+    MAX_LENGTH = max_length
 
+    EMBS_DF_N = load_embs(embeddings_fn)
+    MODEL = load_model()
 
-def run_dev():
-    """Run orserve with auto-reload for development."""
-    uvicorn.run("org_roam_canvas.orserve:app", reload=True)
+    uvicorn.run("org_roam_similarity.serve:app", port=3814, reload=reload)
 
 
 if __name__ == "__main__":
