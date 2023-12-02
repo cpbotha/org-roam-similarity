@@ -1,4 +1,6 @@
+from contextlib import asynccontextmanager
 import logging
+import os
 import time
 from typing import Dict, List
 
@@ -15,9 +17,7 @@ from . import utils
 
 logging.basicConfig(level=logging.INFO)
 
-MAX_LENGTH = None
-EMBS_DF_N = None
-MODEL = None
+ctx = {}
 
 def load_model():
     model = utils.get_model()
@@ -37,7 +37,18 @@ def load_embs(fn):
     # strip out the sha1 column, we only want hthe embeddings
     return embs_df_n.drop("sha1", axis=1)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ctx["max_length"] = int(os.environ.get("ORS_MAX_LENGTH"))
+    logging.info(f"max_length={ctx['max_length']}")
+    ctx["embs_df_n"] = load_embs(os.environ.get("ORS_EMBEDDINGS_FN"))
+    ctx["model"] = load_model()
+    yield
+    # Clean up the ML models and release the resources
+    pass
+
+app = FastAPI(lifespan=lifespan)
 
 class TextObject(BaseModel):
     text: str
@@ -47,28 +58,33 @@ def get_similar_nodes(text_object: TextObject) -> List:
     # time the embedding in microseconds
     start_ns = time.perf_counter_ns() 
     # emb is a numby array. 512 elements in the case of jina v2 small en
-    emb = MODEL.encode(text_object.text, max_length=MAX_LENGTH)
+    emb = ctx["model"].encode(text_object.text, max_length=ctx["max_length"])
     emb_n = emb / np.linalg.norm(emb)
     # series with index the ID and value the similarity
-    top_n = EMBS_DF_N.dot(emb_n).sort_values(ascending=False).head(10)
+    top_n = ctx["embs_df_n"].dot(emb_n).sort_values(ascending=False).head(10)
     end_ns = time.perf_counter_ns()
-    logging.info(f"Embedding {len(text_object.text)}, brute force similarity and sorting took {(end_ns - start_ns) / 1000_000} ms")
+    logging.info(f"Embedding {len(text_object.text)} bytes, brute force similarity, sorting: {(end_ns - start_ns) / 1000_000} ms")
     #logging.warning(text)
     logging.info(top_n.values)
     return zip(top_n.index.to_list(), top_n.values.tolist())
 
 @click.command()
 @click.argument("embeddings_fn")
-@click.option("--max_length", type=int, default=None, required=False, 
+# NOTE: leaving this at None (the default) with long files (e.g. 210KB) would
+#       result in Jina increasing ALIBI size to 64K+ from 8192 and OOMing my GPU
+#       so now rather defaulting to 8192, max for Jina v2
+@click.option("--max_length", type=int, default=8192, required=False, 
               help="Optionally decrease context length to speed up embedding, at the cost of document truncation.")
 @click.option("--reload", is_flag=True)
 def run(embeddings_fn, max_length, reload):
     """Run orserve for production."""
-    global EMBS_DF_N, MAX_LENGTH, MODEL
-    MAX_LENGTH = max_length
 
-    EMBS_DF_N = load_embs(embeddings_fn)
-    MODEL = load_model()
+    # we have to do this strange dance sending CLI argumnents via the
+    # environment to be picked up by the lifespan function so that reloading
+    # works without issues (run() function is only executed first time, it then
+    # invokes uvicorn which imports this file)
+    os.environ["ORS_MAX_LENGTH"] = str(max_length)
+    os.environ["ORS_EMBEDDINGS_FN"] = embeddings_fn
 
     uvicorn.run("org_roam_similarity.serve:app", port=3814, reload=reload)
 
