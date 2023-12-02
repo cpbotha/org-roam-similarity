@@ -42,8 +42,8 @@ jupyterlab = "^4.0.7"
 ipywidgets = "^8.1.1"
 
 [tool.poetry.scripts]
-serve = "org_roam_similarity.serve:run"
-embed = "org_roam_similarity.embed:cli"
+serve_ors = "org_roam_similarity.serve:run"
+embed_ors = "org_roam_similarity.embed:cli"
 
 
 [build-system]
