@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2023 Charl P. Botha
 
-;; Author: J. R. Hacker <jrh@example.com>
+;; Author: Charl P. Botha <cpbotha@vxlabs.com>
 ;; Version: 1.0
 ;; Package-Requires: ((org-roam "2.2.2"))
 ;; Keywords: org, similarity
@@ -46,6 +46,7 @@
 
 ;;;###autoload
 (defun ors-export-org-roam-nodes (target-dir)
+  (interactive "DSelect org-roam nodes txt export directory: ")
   ;; the exporter breaks on includes, so here we temporarily blot out that function
   (cl-letf (((symbol-function 'org-export-expand-include-keyword) #'(lambda()))
             ((symbol-function #'run-mode-hooks) #'ignore) ;; for speed
@@ -70,7 +71,7 @@
          ;; have to utf-8 encode json-encode's result
          ;; see https://lists.gnu.org/archive/html/emacs-devel/2020-06/msg00515.html
          (url-request-data (encode-coding-string (json-encode `(("text" . ,text))) 'utf-8))
-         (response-buffer (url-retrieve-synchronously url))
+         (response-buffer (url-retrieve-synchronously url nil nil 5))
          json-array)
     (with-current-buffer response-buffer
       (goto-char url-http-end-of-headers)
