@@ -1,8 +1,18 @@
+;;; org-roam-similarity.el -- show similar org-roam nodes based on embeddings
+
+;; Copyright (C) 2023 Charl P. Botha
+
+;; Author: J. R. Hacker <jrh@example.com>
+;; Version: 1.0
+;; Package-Requires: ((org-roam "2.2.2"))
+;; Keywords: org, similarity
+;; URL: https://github.com/cpbotha/org-roam-similarity
+
 ;; without this, I was getting void-function org-all-archive-files
 (require 'org-archive)
 (require 'org-roam)
 
-                                        ; this takes less than a second for my 1700 nodes
+;; this takes less than a second for my 1700 nodes
 ;; markdown export above takes a few minutes in contrast
 ;; the price is that we're getting some orgmode cruft as part of the deal
 (defun ors--export-node-as-native (node)
@@ -34,7 +44,7 @@
           (insert txt))))))
 
 
-
+;;;###autoload
 (defun ors-export-org-roam-nodes (target-dir)
   ;; the exporter breaks on includes, so here we temporarily blot out that function
   (cl-letf (((symbol-function 'org-export-expand-include-keyword) #'(lambda()))
@@ -44,7 +54,7 @@
           (node-list (org-roam-node-list)))
       (message "======> exporting %d nodes" (length node-list))
       (dolist (node node-list)
-        (export-node-as-native node)
+        (ors--export-node-as-native node)
         ))
     (message "DONE.")))
 
