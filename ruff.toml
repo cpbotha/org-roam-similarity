@@ -1,0 +1,7 @@
+line-length = 88
+
+[lint]
+select = ["D"]
+
+[lint.pydocstyle]
+convention = "google"
