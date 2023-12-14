@@ -2,13 +2,13 @@ import logging
 import os
 import time
 from contextlib import asynccontextmanager
-from typing import Dict, List
+from typing import List
 
 import click
 import numpy as np
 import pandas as pd
 import uvicorn
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from pydantic import BaseModel
 
 from . import utils
