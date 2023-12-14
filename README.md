@@ -28,7 +28,7 @@ The steps, explained in more detail in the following subsections, are a follows:
 
 Add the included [org-roam-similarity](./org-roam-similarity.el) to your Emacs init.
 
-There are various ways to do this, e.g. with [straightel](https://github.com/radian-software/straight.el). On Emacs 29.1 or later, you can use the built-in ~package-vc-install~ function:
+There are various ways to do this, e.g. with [straightel](https://github.com/radian-software/straight.el). On Emacs 29.1 or later, you can use the built-in `package-vc-install` function:
 
 ```emacs-lisp
 (unless (package-installed-p 'org-roam-similarity)
