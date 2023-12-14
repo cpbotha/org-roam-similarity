@@ -15,17 +15,88 @@ This open source setup currently works as follows:
 - run serve.py which waits for submission of any text to return the N closest node ids, according to the Jina AI learned embeddings. These are really quite good and fully local, but it would be straight-forward to use a service like OpenAI embeddings for everything
 - There is more emacs lisp that customizes the org-roam buffer setup to call to serve.py's endpoint and renders the list of similar nodes
 
-## Status of this repo
-
-75% ready for reproduction. Remaining tasks as on 2023-11-27 are below:
-
-- [ ] convert my current emacs lisp for run-time similarity retrieval from server to package (not even my klunky version is on github yet)
-- [ ] clean up code for creation of global embeddings
-- [ ] Write quickstart (when you see this appear below, it means this repo is ready for you to try)
-
 ## Quickstart
 
-TBD
+The steps, explained in more detail in the following subsections, are a follows:
+
+1. install org-roam-similarity.el
+2. export nodes and create embeddings (Python)
+3. start server (Python)
+4. use the familiar org-roam buffer
+
+### Install org-roam-similarity Emacs support
+
+Add the included [org-roam-similarity](./org-roam-similarity.el) to your Emacs init.
+
+There are various ways to do this, e.g. with [straightel](https://github.com/radian-software/straight.el). On Emacs 29.1 or later, you can use the built-in ~package-vc-install~ function:
+
+```emacs-lisp
+(unless (package-installed-p 'org-roam-similarity)
+ (package-vc-install "https://github.com/cpbotha/org-roam-similarity"))
+```
+
+### Configure the org-roam buffer to use similarity
+
+Add the following to your Emacs init:
+
+```emacs-lisp
+(setq org-roam-mode-sections (list #'org-roam-similarity-section
+                                   #'org-roam-backlinks-section
+                                   #'org-roam-reflinks-section))
+```
+
+Here we add the similarity section to the existing two backlinks and reflinks sections.
+
+### Install the org-roam-similarity Python code
+
+The easiest way to do this is if you have [pipx](https://github.com/pypa/pipx) installed:
+
+```shell
+pipx install https://github.com/cpbotha/org-roam-similarity
+```
+
+You can now invoke either `embed_ors` or `serve_ors`.
+
+Alternatively, you can also opt to ~git clone~ the repo, and then do the following in the checked-out directory:
+
+```shell
+poetry install
+```
+
+In this case, you can invoke the e.g. the ors server with `poetry run serve_ors`
+
+### Export and embed your org-roam database
+
+Create a temporary directory, e.g. `/tmp/ors/`.
+
+With `org-roam-similarity.el` installed, invoke `M-x ors-export-org-roam-nodes` and enter `/tmp/ors` when asked.
+
+This will export all of your org-roam nodes into .txt files, named according to the org-roam ID.
+
+Now create the embeddings by doing:
+
+```shell
+# or poetry run embed_ors ... if you chose poetry
+embed_ors some-proj /tmp/ors/
+```
+
+On my RTX 2070 GPU, this takes a minute or two for 1700 nodes. On my M1 Pro with the mps (Metal) backend, it takes 10 to 15 minutes.
+
+This will create a file named `/tmp/ors/some-proj.norm_embs.parq` which contains the 512-dimensional embeddings for all of your nodes.
+
+If you keep that parq file there, the next time you embed, it will use a hash-based caching mechanism to embed only the nodes that you added.
+
+### Start the server
+
+```shell
+embed_ors /tmp/ors/some-proj.norm_embs.parq
+```
+
+### Try it out!
+
+With an org-roam node showing, activate the org-roam-buffer with `M-x org-roam-buffer-toggle` or `C-c n l`.
+
+In the server logs you should see it being hit, and then the similar nodes will appear in the familiar `org-roam-buffer`. At every save or org-roam navigate, the buffer will update with the new list of most similar nodes.
 
 ## Setup your dev environment
 
