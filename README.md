@@ -86,6 +86,8 @@ This will create a file named `/tmp/ors/some-proj.norm_embs.parq` which contains
 
 If you keep that parq file there, the next time you embed, it will use a hash-based caching mechanism to embed only the nodes that you added.
 
+You can also copy the parq file around and use it anywhere else. The server only requires the parq file and not the exported txt files.
+
 ### Start the server
 
 ```shell
