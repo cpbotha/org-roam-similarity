@@ -1,13 +1,13 @@
 import hashlib
 from pathlib import Path
 
-
+import click
 import numpy as np
 import pandas as pd
-import click
 from tqdm import tqdm
 
 from . import utils
+
 
 @click.command()
 @click.argument("proj")
@@ -22,10 +22,14 @@ from . import utils
 )
 # make default '*.txt'
 @click.argument("glob", default="*.txt")
-@click.option("--max_length", type=int, default=None, required=False, 
-              help="Optionally decrease context length to speed up embedding, at the cost of document truncation.")
+@click.option(
+    "--max_length",
+    type=int,
+    default=None,
+    required=False,
+    help="Optionally decrease context length to speed up embedding, at the cost of document truncation.",
+)
 def cli(proj: str, path: Path, glob: str, max_length=None):
-
     model = utils.get_model()
 
     if model.device.type == "cpu":
@@ -35,12 +39,12 @@ def cli(proj: str, path: Path, glob: str, max_length=None):
 
     target_dir = Path(path)
 
-    embs_path = utils.get_embs_path(target_dir, proj) 
+    embs_path = utils.get_embs_path(target_dir, proj)
     if embs_path.exists():
         click.echo("✅ loading previous embeddings for caching")
         prev_df = pd.read_parquet(embs_path)
-        print(prev_df.head())
-        # prev_sha_df has the same index, but maps to sha1 
+        # print(prev_df.head())
+        # prev_sha_df has the same index, but maps to sha1
         prev_sha1_df = prev_df["sha1"]
         prev_embs_df = prev_df.drop("sha1", axis=1)
 
@@ -51,7 +55,12 @@ def cli(proj: str, path: Path, glob: str, max_length=None):
     shas = {}
     cache_hits = 0
     for f in tqdm(list(Path(path).glob(glob))):
-        txt = f.open().read()
+        try:
+            txt = f.open(encoding="utf-8").read()
+        except UnicodeDecodeError as e:
+            print(repr(e))
+            click.echo(f"⚠️ Unicode error reading {f}, skipping...")
+            continue
 
         # e.g. 1da13263b16314112f6886f6c81ecc133289d52f
         sha1 = hashlib.sha1(txt.encode()).hexdigest()
@@ -81,6 +90,7 @@ def cli(proj: str, path: Path, glob: str, max_length=None):
     click.echo(f"Wrote {len(df)} embeddings to {embs_path} ({cache_hits} cache hits).")
 
     click.echo()
+
 
 if __name__ == "__main__":
     cli()
