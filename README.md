@@ -77,12 +77,14 @@ Now create the embeddings by doing:
 
 ```shell
 # or poetry run embed_ors ... if you chose poetry
-embed_ors some-proj /tmp/ors/
+# --model 0: sentence-transformers/multi-qa-MiniLM-L6-cos-v1 -- smaller and faster
+# --model 1: jinaai/jina-embeddings-v2-small-en -- larger and more accurate
+embed_ors /tmp/ors/
 ```
 
-On my RTX 2070 GPU, this takes a minute or two for 1700 nodes. On my M1 Pro with the mps (Metal) backend, it takes 10 to 15 minutes.
+On my RTX 2070 GPU, this Jina a minute or two for 1700 nodes. On my M1 Pro with the mps (Metal) backend, it takes 10 to 15 minutes. MiniLM (model 0) takes about 5 minutes on the M1 Pro, so 3x faster.
 
-This will create a file named `/tmp/ors/some-proj.norm_embs.parq` which contains the 512-dimensional embeddings for all of your nodes.
+This will create a file named `/tmp/ors/<MODEL_NAME>.norm_embs.parq` which contains the 512-dimensional (384 for MiniLM) embeddings for all of your nodes.
 
 If you keep that parq file there, the next time you embed, it will use a hash-based caching mechanism to embed only the nodes that you added.
 
@@ -91,7 +93,7 @@ You can also copy the parq file around and use it anywhere else. The server only
 ### Start the server
 
 ```shell
-embed_ors /tmp/ors/some-proj.norm_embs.parq
+embed_ors /tmp/ors/<MODEL_NAME>.norm_embs.parq
 ```
 
 ### Try it out!
