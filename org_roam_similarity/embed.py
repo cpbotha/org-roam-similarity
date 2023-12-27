@@ -10,7 +10,6 @@ from . import utils
 
 
 @click.command()
-@click.argument("proj")
 @click.argument(
     "path",
     type=click.Path(
@@ -22,6 +21,7 @@ from . import utils
 )
 # make default '*.txt'
 @click.argument("glob", default="*.txt")
+@click.option("--model", type=int, default=0, required=False, help="0: MiniLM, 1: jina-embeddings-v2-small-en")
 @click.option(
     "--max_length",
     type=int,
@@ -29,8 +29,9 @@ from . import utils
     required=False,
     help="Optionally decrease context length to speed up embedding, at the cost of document truncation.",
 )
-def cli(proj: str, path: Path, glob: str, max_length=None):
-    model = utils.get_model()
+def cli(path: Path, glob: str, model=0, max_length=None):
+    model_name = utils.MODEL_LUT[model]
+    model, tokenizer = utils.get_model_and_tokenizer(model_name)
 
     if model.device.type == "cpu":
         click.echo("⚠️ model is on CPU, this will be slow")
@@ -39,7 +40,7 @@ def cli(proj: str, path: Path, glob: str, max_length=None):
 
     target_dir = Path(path)
 
-    embs_path = utils.get_embs_path(target_dir, proj)
+    embs_path = utils.get_embs_path(target_dir, model_name)
     if embs_path.exists():
         click.echo("✅ loading previous embeddings for caching")
         prev_df = pd.read_parquet(embs_path)
@@ -70,17 +71,19 @@ def cli(proj: str, path: Path, glob: str, max_length=None):
             prev_sha1 = prev_sha1_df.loc[id]
             if sha1 == prev_sha1:
                 # if the sha1 hasn't changed, we can skip this file
-                embs[id] = prev_embs_df.loc[id]
+                # the previous embedding comes out as pd.Series, let's cast to numpy array
+                embs[id] = prev_embs_df.loc[id].to_numpy()
                 shas[id] = sha1
                 cache_hits += 1
                 continue
 
         # you can use max_length=4096 or even less to speed up and use less ram
         # generally we try to do max context 8192 for initial embedding, but smaller context for inference
-        emb = model.encode(txt)
+        emb = utils.encode(txt, tokenizer, model)  # , max_length=max_length)
         # f.stem by convention is the ID
-        # also, we pre-normalize the embeddings so that we don't have to do it at query time
-        embs[id] = emb / np.linalg.norm(emb)
+        # we gave it a single text, so we get out a batch of size 1, hence the emb[0]
+        # then move to cpu, and convert to numpy
+        embs[id] = emb[0].cpu().numpy()
         shas[id] = sha1
 
     # dict key should be row index, hence index
