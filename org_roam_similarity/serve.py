@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -44,7 +45,9 @@ async def lifespan(app: FastAPI):
     fn = os.environ.get("ORS_EMBEDDINGS_FN")
     ctx["embs_df_n"] = load_embs(fn)
 
-    model_name = Path(fn).name.split(".norm_embs.parq")[0].replace("---", "/")
+    # path should be: ors_embs.MODEL_NAME.parq
+    # if it's not, this code will break
+    model_name = re.match(r"ors_embs\.(.+)\.parq", Path(fn).name).group(1).replace("---", "/")
     ctx["model"], ctx["tokenizer"] = load_model(model_name)
     yield
     # Clean up the ML models and release the resources
@@ -94,7 +97,6 @@ def get_similar_nodes(text_object: TextObject) -> List:
 @click.option("--reload", is_flag=True)
 def run(embeddings_fn, max_length, reload):
     """Run orserve for production."""
-
     # we have to do this strange dance sending CLI argumnents via the
     # environment to be picked up by the lifespan function so that reloading
     # works without issues (run() function is only executed first time, it then
