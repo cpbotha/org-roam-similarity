@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import torch
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
@@ -10,6 +8,7 @@ MODEL_LUT = ["sentence-transformers/multi-qa-MiniLM-L6-cos-v1", "jinaai/jina-emb
 # - nreimers/MiniLM-L6-H384-uncased == multi-qa-MiniLM-L6-cos-v1
 #   max context length 512
 # - jinaai/jina-embeddings-v2-small-en
+#   max context length 8192 but much slower; needs NVIDIA GPU with a few gigs
 def get_model_and_tokenizer(model_name="jinaai/jina-embeddings-v2-small-en"):
     try:
         model = AutoModel.from_pretrained(model_name, trust_remote_code=True, device_map="auto")
