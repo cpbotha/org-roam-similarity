@@ -5,6 +5,7 @@ from transformers import AutoModel, AutoTokenizer
 MODEL_LUT = ["sentence-transformers/multi-qa-MiniLM-L6-cos-v1", "jinaai/jina-embeddings-v2-small-en"]
 
 
+# See https://www.sbert.net/docs/pretrained_models.html for more. Currently we support the following:
 # - nreimers/MiniLM-L6-H384-uncased == multi-qa-MiniLM-L6-cos-v1
 #   max context length 512
 # - jinaai/jina-embeddings-v2-small-en
