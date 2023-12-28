@@ -127,8 +127,8 @@
              :source-node snode
              :point (org-roam-node-point snode)
              ;; hack: I'm using the outline property to render the scores
-             :properties `(:outline (,(format "%.3f" (nth 1 node-id-score)))))
-            (insert ?\n)))))))
+             :properties `(:outline (,(format "%.3f" (nth 1 node-id-score)))))))
+        (insert ?\n)))))
 
 (provide 'org-roam-similarity)
 
