@@ -8,6 +8,8 @@
 ;; Keywords: org, similarity
 ;; URL: https://github.com/cpbotha/org-roam-similarity
 
+;; TODO: if region selected, then only search for that region
+
 ;; without this, I was getting void-function org-all-archive-files
 (require 'org-archive)
 (require 'org-roam)
@@ -79,9 +81,10 @@
       (setq json-array (json-read))
       (kill-buffer))
     ;; json-array is a vector with nested two-element (id, similarity-value) vectors
-    ;; we mapcar over it, converting the outer vec to list, while we extract
-    ;; the first element (id) of each 2-element vector
-    (mapcar (lambda (v) (aref v 0)) json-array)))
+    ;; we mapcar over it, converting the outer vec to list, while we convert each
+    ;; inner 2-element vector to a list with (append v nil)
+    ;; first element extraction from vector would have been: (aref v 0)
+    (mapcar (lambda (v) (append v nil)) json-array)))
 
 
 ;;;###autoload
@@ -112,21 +115,20 @@
                               (buffer-substring begin end)) )
                           ))))
 
-    ;; TODO: if region selected, then only search for that region
-    ;; obviously the most similar node will be us, so we see ourselves out haha
-    (setq node-ids (remove id (ors--get-similar-nodes node-text)))
 
-    (when node-ids
+    ;; obviously the most similar node will be us, so we see ourselves out haha
+    (when-let ((node-ids-scores (cl-remove-if (lambda (v) (string= (nth 0 v) id)) (ors--get-similar-nodes node-text))))
       (magit-insert-section (org-roam-similarity)
         (magit-insert-heading "Similar notes:")
-        (dolist (node-id node-ids)
+        (dolist (node-id-score node-ids-scores)
           ;;
-          (when-let ((snode (org-roam-node-from-id node-id)))
+          (when-let ((snode (org-roam-node-from-id (car node-id-score))))
             (org-roam-node-insert-section
              :source-node snode
              :point (org-roam-node-point snode)
-             :properties nil))
-          (insert ?\n))))))
+             ;; hack: I'm using the outline property to render the scores
+             :properties `(:outline (,(format "%.3f" (nth 1 node-id-score)))))
+            (insert ?\n)))))))
 
 (provide 'org-roam-similarity)
 
