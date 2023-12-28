@@ -126,3 +126,12 @@ Using this via transformers required the whole of CUDA, cudnn and at the end als
 On WSL with Ubuntu 22.04, I upgraded to CUDA 12.1 following https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
 
 I could also have stuck with the CUDA 11.8 packages of PyTorch 2.1, but it looks like 12.1 is now the default
+
+## Related work
+
+[Semantic Search for Org roam](https://lgmoneda.github.io/2023/04/08/semantic-search-for-org-roam.html) by Luis Moneda is a great blog post and accompanying implementation for a fairly similar solution to this one.
+
+In addition to me only discovering Luis's work after publishing this package, it differs from Luis's work in the following ways: It uses exclusively local models for the document embedding, it uses the built-in org-roam functions for iterating over all nodes, it integrated with the existing `org-roam-buffer`, and it pretends to be configurable by others in a reasonable time. Based on his blog post, Luis wanted to experiment some more with the prototype system that he had built.
+
+[org-similarity](https://github.com/brunoarine/org-similarity) also does similarity searches, but it uses
+older, slightly less accurate but much faster lexical similarity calculations like TF-IDF and BM25.
