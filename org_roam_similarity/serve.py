@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -16,14 +17,14 @@ from . import utils
 
 logging.basicConfig(level=logging.INFO)
 
-ctx = {}
+ctx = {"idle_time": 0}
 
 
 def load_model(model_name):
     model, tokenizer = utils.get_model_and_tokenizer(model_name)
 
     if model.device.type == "cpu":
-        logging.warning("⚠️ model is on CPU, this will be slow")
+        logging.warning("⚠️  model is on CPU, this might be slow")
     else:
         logging.info(f"✅ model is on device {model.device}")
 
@@ -38,6 +39,22 @@ def load_embs(fn):
     return embs_df_n.drop("sha1", axis=1)
 
 
+async def bleh():
+    sleep_increment = 5
+
+    while True:
+        await asyncio.sleep(sleep_increment)
+        ctx["idle_time"] += sleep_increment
+        if ctx["model"] is not None and ctx["idle_time"] > 600:
+            logging.info("💤 Idle for too long, shutting down model, will reactivate on new requests.")
+            # remove ctx["model"] from the GPU
+            ctx["model"] = None
+            ctx["tokenizer"] = None
+            import gc
+
+            gc.collect()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ctx["max_length"] = int(os.environ.get("ORS_MAX_LENGTH"))
@@ -47,11 +64,18 @@ async def lifespan(app: FastAPI):
 
     # path should be: ors_embs.MODEL_NAME.parq
     # if it's not, this code will break
-    model_name = re.match(r"ors_embs\.(.+)\.parq", Path(fn).name).group(1).replace("---", "/")
-    ctx["model"], ctx["tokenizer"] = load_model(model_name)
+    ctx["model_name"] = re.match(r"ors_embs\.(.+)\.parq", Path(fn).name).group(1).replace("---", "/")
+    # we're going to load the model on-demand
+    ctx["model"], ctx["tokenizer"] = None, None
+
+    # start async task that sleeps most of the time, but checks idle time
+    # periodically and shuts down if idle for too long
+    sleeper_task = asyncio.create_task(bleh())
+
     yield
+
     # Clean up the ML models and release the resources
-    pass
+    sleeper_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -63,6 +87,10 @@ class TextObject(BaseModel):
 
 @app.post("/similar/")
 def get_similar_nodes(text_object: TextObject) -> List:
+    ctx["idle_time"] = 0
+    if ctx["model"] is None:
+        ctx["model"], ctx["tokenizer"] = load_model(ctx["model_name"])
+
     # time the embedding in microseconds
     start_ns = time.perf_counter_ns()
     # emb is a numby array. 512 elements in the case of jina v2 small en
