@@ -67,6 +67,7 @@
 (require 'json)
 
 (defun ors--get-similar-nodes (text)
+  "Return list of node,score representing most similar nodes to TEXT."
   (let* ((url "http://localhost:3814/similar/")
          (url-request-method "POST")
          (url-request-extra-headers '(("Content-Type" . "application/json")))
@@ -86,6 +87,24 @@
     ;; first element extraction from vector would have been: (aref v 0)
     (mapcar (lambda (v) (append v nil)) json-array)))
 
+;;;###autoload
+(cl-defun org-roam-node-find-similar (&optional other-window initial-input pred &key templates)
+  "Find and open org-roam nodes that are similar to the current region or buffer.
+This is otherwise identical to `org-roam-node-find'."
+  (interactive current-prefix-arg)
+  (let* ((region-or-buffer (if (use-region-p)
+                               (buffer-substring-no-properties (region-beginning) (region-end))
+                             (buffer-string)))
+         (sim-node-ids (mapcar #'car (ors--get-similar-nodes region-or-buffer)))
+         (node (org-roam-node-read initial-input (lambda (node)
+                                                   ;; if node's id is in the list of similar nodes, keep it
+                                                   (member (org-roam-node-id node) sim-node-ids)) pred)))
+    (if (org-roam-node-file node)
+        (org-roam-node-visit node other-window)
+      (org-roam-capture-
+       :node node
+       :templates templates
+       :props '(:finalize find-file)))))
 
 ;;;###autoload
 (defun org-roam-similarity-section (node)

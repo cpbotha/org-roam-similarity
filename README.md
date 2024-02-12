@@ -47,6 +47,14 @@ Add the following to your Emacs init:
 
 Here we add the similarity section to the existing two backlinks and reflinks sections.
 
+### Key bind the ad-hoc similarity search
+
+With this interactive function, you can find the org-roam nodes that are similar to the current region (if active) or the whole buffer, no matter whether it's a node or not.
+
+``` emacs-lisp
+(global-set-key (kbd "C-c n S") 'org-roam-node-find-similar)
+```
+
 ### Install the org-roam-similarity Python code
 
 The easiest way to do this is if you have [pipx](https://github.com/pypa/pipx) installed:
