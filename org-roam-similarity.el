@@ -87,6 +87,7 @@
     ;; first element extraction from vector would have been: (aref v 0)
     (mapcar (lambda (v) (append v nil)) json-array)))
 
+
 ;;;###autoload
 (cl-defun org-roam-node-find-similar (&optional other-window initial-input pred &key templates)
   "Find and open org-roam nodes that are similar to the current region or buffer.
@@ -95,10 +96,24 @@ This is otherwise identical to `org-roam-node-find'."
   (let* ((region-or-buffer (if (use-region-p)
                                (buffer-substring-no-properties (region-beginning) (region-end))
                              (buffer-string)))
-         (sim-node-ids (mapcar #'car (ors--get-similar-nodes region-or-buffer)))
-         (node (org-roam-node-read initial-input (lambda (node)
-                                                   ;; if node's id is in the list of similar nodes, keep it
-                                                   (member (org-roam-node-id node) sim-node-ids)) pred)))
+         (node-ids-scores (ors--get-similar-nodes region-or-buffer))
+         (sim-node-ids (mapcar #'car node-ids-scores))
+         (node (org-roam-node-read initial-input
+                                   (lambda (node)
+                                     ;; if node's id is in the list of similar nodes, keep it
+                                     (member (org-roam-node-id node) sim-node-ids))
+                                   (lambda (completion-a completion-b)
+                                     ;; sort by similarity score, highest at the top of course
+                                     (message "%s" node-ids-scores)
+                                     (let* ((node-id-a (org-roam-node-id (cdr completion-a)))
+                                            (node-id-b (org-roam-node-id (cdr completion-b)))
+                                            (score-a (car (cdr (assoc node-id-a node-ids-scores))))
+                                            (score-b (car (cdr (assoc node-id-b node-ids-scores))))
+                                            )
+                                       (< score-b score-a)
+                                       )
+
+                                     ))))
     (if (org-roam-node-file node)
         (org-roam-node-visit node other-window)
       (org-roam-capture-
