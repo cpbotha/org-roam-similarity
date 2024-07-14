@@ -45,7 +45,9 @@ def mean_pooling(model_output, attention_mask):
 def encode(texts, tokenizer, model):
     # Tokenize sentences
     encoded_input = tokenizer(texts, padding=True, truncation=True, return_tensors="pt").to(model.device)
-    print(encoded_input["input_ids"].shape)
+
+    # for debugging
+    #print(encoded_input["input_ids"].shape)
 
     # Compute token embeddings
     with torch.no_grad():
