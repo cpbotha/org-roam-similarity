@@ -57,13 +57,28 @@ With this interactive function, you can find the org-roam nodes that are similar
 
 ### Install the org-roam-similarity Python code
 
+There are at least three ways to get this running.
+
+#### pipx
+
 The easiest way to do this is if you have [pipx](https://github.com/pypa/pipx) installed:
 
 ```shell
-pipx install https://github.com/cpbotha/org-roam-similarity
+pipx install git+https://github.com/cpbotha/org-roam-similarity
 ```
 
 You can now invoke either `embed_ors` or `serve_ors`.
+
+#### uvx / uv tool
+
+Use the following commands when you want to pre-process and run the server respectively:
+
+```shell
+uvx --from git+https://github.com/cpbotha/org-roam-similarity embed_ors
+uvx --from git+https://github.com/cpbotha/org-roam-similarity serve_ors
+```
+
+#### git clone the repo, then poetry run
 
 Alternatively, you can also opt to ~git clone~ the repo, and then do the following in the checked-out directory:
 
