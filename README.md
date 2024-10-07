@@ -71,12 +71,15 @@ You can now invoke either `embed_ors` or `serve_ors`.
 
 #### uvx / uv tool
 
-Use the following commands when you want to pre-process and run the server respectively:
+Use `uv tool` to install the package in a self-contained virtualenv, just like `pipx`. You'll be able to invoke `server_ors` and `embed_ors` from the `~/.local/bin` directory.
 
 ```shell
-uvx --from git+https://github.com/cpbotha/org-roam-similarity embed_ors
-uvx --from git+https://github.com/cpbotha/org-roam-similarity serve_ors
+# at the time of writing (2024-10-07) pyarrow only supports up to python 3.11
+# uvx (uv 0.4.18) does not honour the python package version limitation in pyproject, so here we instruct it
+uv tool install --python `which python3.11` git+https://github.com/cpbotha/org-roam-similarity
 ```
+
+See [this PR description](https://github.com/astral-sh/uv/issues/3560) for more details about tools.
 
 #### git clone the repo, then poetry run
 
