@@ -11,10 +11,12 @@ packages = [{include = "org_roam_similarity"}]
 
 [tool.poetry.dependencies]
 # <3.13 to get numpy installed :(
-python = ">=3.10,<3.13"
+# 3.11 maximum for pyarrow :( https://arrow.apache.org/docs/python/install.html#python-compatibility on 2024-10-07
+python = ">=3.10,<3.12"
 transformers = "^4.34.1"
 torch = "^2.3.1"
 pandas = "^2.1.2"
+numpy = "<2"
 pyarrow = "^13.0.0"
 fastapi = "^0.104.1"
 uvicorn = "^0.24.0.post1"
